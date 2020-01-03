@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/gocolly/colly"
+	"github.com/gocolly/colly/debug"
 )
 
 var counter int = 0
@@ -29,7 +31,14 @@ func main() {
 	c := colly.NewCollector(
 		colly.AllowedDomains("www.propertypal.com"),
 		colly.CacheDir("./propertypal_cache"),
+		colly.Debugger(&debug.LogDebugger{}),
+		colly.Async(true),
 	)
+
+	c.Limit(&colly.LimitRule{
+		DomainGlob:		"propertypal.*",
+		Delay:			  10*time.Second,
+	})
 
 	c.OnHTML("div.propbox", func(e *colly.HTMLElement) {
 		link := e.ChildAttr("a[href]", "href")
@@ -47,7 +56,7 @@ func main() {
 
 	c.OnHTML("a.paging-next", func(e *colly.HTMLElement) {
 		link := e.Attr("href")
-		if counter > 0 {
+		if counter > 2 {
 			fmt.Printf("Reached %d pages", counter)
 			return
 		}
@@ -60,6 +69,7 @@ func main() {
 	})
 
 	c.Visit("https://www.propertypal.com/search?sta=forSale&sta=saleAgreed&sta=sold&st=sale&currency=GBP&term=15&pt=residential")
+	c.Wait()
 }
 
 func scrapeProperty(u string) {
@@ -107,5 +117,6 @@ func scrapeProperty(u string) {
 
 	url := fmt.Sprintf("https://www.propertypal.com%s", u)
 	p.Visit(url)
+
 	fmt.Printf("\n")
 }

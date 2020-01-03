@@ -10,6 +10,21 @@ import (
 
 var counter int = 0
 
+type Property struct {
+	Timestamp		string
+	URL					string
+	Address			string
+	Price				string
+	Style				string
+	Bedrooms		string
+	Receptions	string
+	Rates				string
+	Heating			string
+	EPC					string
+	Status			string
+	Description	string
+}
+
 func main() {
 	c := colly.NewCollector(
 		colly.AllowedDomains("www.propertypal.com"),
@@ -32,7 +47,7 @@ func main() {
 
 	c.OnHTML("a.paging-next", func(e *colly.HTMLElement) {
 		link := e.Attr("href")
-		if counter > 2 {
+		if counter > 0 {
 			fmt.Printf("Reached %d pages", counter)
 			return
 		}
@@ -69,8 +84,25 @@ func scrapeProperty(u string) {
 				fmt.Printf("Bedrooms: %s\n", el.ChildText("td"))
 			case "Receptions":
 				fmt.Printf("Receptions: %s\n", el.ChildText("td"))
+			case "Rates":
+				fmt.Printf("Rates: %s\n", el.ChildText("td"))
+			case "Heating":
+				fmt.Printf("Heating: %s\n", el.ChildText("td"))
+			case "EPC Rating":
+				fmt.Printf("EPC Rating: %s\n", space.ReplaceAllString(el.ChildText("td"), " "))
+			case "Status":
+				fmt.Printf("Status: %s\n", el.ChildText("td"))
 			}
 		})
+	})
+
+	p.OnHTML("p.enquiry-org", func(e *colly.HTMLElement) {
+		fmt.Printf("Agent: %s\n", space.ReplaceAllString(e.Text, " "))
+	})
+
+	p.OnHTML("div.prop-descr-text", func(e *colly.HTMLElement) {
+		description := space.ReplaceAllString(e.Text, " ")
+		fmt.Printf("Description: %s\n", description)
 	})
 
 	url := fmt.Sprintf("https://www.propertypal.com%s", u)

@@ -91,7 +91,7 @@ func main() {
 	})
 
 	c2.OnHTML("html", func(e *colly.HTMLElement) {
-		db, err := sql.Open("sqlite3", "properties-db.sqlite")
+		db, err := sql.Open("sqlite3", "propertiesdb.sqlite")
 		if err != nil {
 			log.Fatalln("unable to open database", err)
 		}

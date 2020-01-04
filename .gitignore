@@ -1,2 +1,2 @@
 propertypal_cache/
-*.sqlite
+properties-db.sqlite

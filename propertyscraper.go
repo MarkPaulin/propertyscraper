@@ -2,13 +2,12 @@ package main
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gocolly/colly"
 	_ "github.com/mattn/go-sqlite3"
@@ -68,11 +67,12 @@ type Property struct {
 }
 
 func main() {
-	properties := make([]Property, 0, 1000)
 	c := colly.NewCollector(
 		colly.AllowedDomains("www.propertypal.com"),
 		colly.CacheDir("./propertypal_cache"),
 	)
+
+	c.Limit(&colly.LimitRule{DomainGlob: "*", Delay: 5 * time.Second})
 
 	c2 := c.Clone()
 
@@ -207,7 +207,7 @@ func main() {
 	c.OnHTML("a.paging-next", func(e *colly.HTMLElement) {
 		link := e.Attr("href")
 		counter++
-		if counter > 0 {
+		if counter > 50 {
 			fmt.Printf("Reached %d pages", counter)
 			return
 		}
@@ -223,14 +223,4 @@ func main() {
 	})
 
 	c.Visit("https://www.propertypal.com/search?sta=forSale&sta=saleAgreed&sta=sold&st=sale&currency=GBP&term=15&pt=residential")
-
-	file, err := json.MarshalIndent(properties, "", "  ")
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	err = ioutil.WriteFile("test.json", file, 0644)
-	if err != nil {
-		log.Fatalln(err)
-	}
 }

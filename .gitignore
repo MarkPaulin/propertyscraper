@@ -1,2 +1,3 @@
 propertypal_cache/
 properties-db.sqlite
+*.exe

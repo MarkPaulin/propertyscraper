@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"math/rand"
 	"regexp"
 	"strconv"
 	"strings"
@@ -72,9 +73,10 @@ func main() {
 		colly.CacheDir("./propertypal_cache"),
 	)
 
-	c.Limit(&colly.LimitRule{DomainGlob: "*", Delay: 5 * time.Second})
-
-	c2 := c.Clone()
+	c2 := colly.NewCollector(
+		colly.AllowedDomains("www.propertypal.com"),
+		colly.CacheDir("./propertypal_cache"),
+	)
 
 	c.OnHTML("div.propbox", func(e *colly.HTMLElement) {
 		link := e.ChildAttr("a[href]", "href")
@@ -91,6 +93,9 @@ func main() {
 	})
 
 	c2.OnHTML("html", func(e *colly.HTMLElement) {
+		n := rand.Intn(30)
+		time.Sleep(time.Duration(n) * time.Second)
+
 		db, err := sql.Open("sqlite3", "propertiesdb.sqlite")
 		if err != nil {
 			log.Fatalln("unable to open database", err)
@@ -132,8 +137,8 @@ func main() {
 
 		property.Postcode = e.ChildText("span.prop-summary-townPostcode > span.text-ib")
 
-		property.PriceOffers = e.ChildText("div.prop-price-sm > span.price > span.price-offers")
-		property.Price = e.ChildText("div.prop-price-sm > span.price > span.price-value")
+		//property.PriceOffers = e.ChildText("div.prop-price-sm > span.price > span.price-offers")
+		//property.Price = e.ChildText("div.prop-price-sm > span.price > span.price-value")
 		property.PriceMin = e.ChildText("div.prop-price-sm > span.price > span.price-min")
 		property.PriceMax = e.ChildText("div.prop-price-sm > span.price > span.price-max")
 
@@ -142,6 +147,9 @@ func main() {
 
 		e.ForEach("table#key-info-table tr", func(_ int, el *colly.HTMLElement) {
 			switch el.ChildText("th") {
+			case "Price":
+				property.PriceOffers = el.ChildText("td > span.price-prefix")
+				property.Price = el.ChildText("td > span.price-text")
 			case "Style":
 				property.Style = el.ChildText("td")
 			case "Bedrooms":
@@ -207,7 +215,7 @@ func main() {
 	c.OnHTML("a.paging-next", func(e *colly.HTMLElement) {
 		link := e.Attr("href")
 		counter++
-		if counter > 50 {
+		if counter > 500 {
 			fmt.Printf("Reached %d pages", counter)
 			return
 		}
